@@ -1,0 +1,14 @@
+{
+  "_comment": "Vercel does not support Accept header routing natively. For full content negotiation, use the Cloudflare Workers approach (see templates/cloudflare-worker.js). The headers block below ensures .md files are served with the correct content type when accessed directly.",
+  "headers": [
+    {
+      "source": "/articles/:slug.md",
+      "headers": [
+        { "key": "Content-Type", "value": "text/markdown; charset=utf-8" },
+        { "key": "Cache-Control", "value": "public, max-age=3600" },
+        { "key": "X-Content-Format", "value": "markdown" }
+      ]
+    }
+  ],
+  "rewrites": []
+}

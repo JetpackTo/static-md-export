@@ -1,0 +1,42 @@
+{
+  "name": "@jetpackto/static-md-export",
+  "version": "0.1.0",
+  "description": "Generate static .md versions of your content so AI agents can request clean markdown via content negotiation",
+  "type": "module",
+  "bin": {
+    "static-md-export": "./src/cli.js"
+  },
+  "exports": {
+    ".": "./src/index.js",
+    "./astro": "./src/astro.js"
+  },
+  "files": [
+    "src/",
+    "templates/"
+  ],
+  "scripts": {
+    "test": "node --test"
+  },
+  "keywords": [
+    "markdown",
+    "content-negotiation",
+    "astro",
+    "static-site",
+    "ai",
+    "llm",
+    "mdx"
+  ],
+  "author": "Jetpack Labs",
+  "license": "MIT",
+  "dependencies": {
+    "gray-matter": "^4.0.3"
+  },
+  "peerDependencies": {
+    "astro": ">=4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "astro": {
+      "optional": true
+    }
+  }
+}

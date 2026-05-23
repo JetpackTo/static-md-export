@@ -1,0 +1,19 @@
+# Caddy — content negotiation for markdown
+# Place inside your site block
+
+# Serve markdown when Accept: text/markdown is present
+@markdown_articles {
+    path_regexp slug ^/articles/([^/]+)/?$
+    header Accept *text/markdown*
+}
+rewrite @markdown_articles /articles/{re.slug.1}.md
+
+# Set content type for .md files
+@md_files path *.md
+header @md_files Content-Type "text/markdown; charset=utf-8"
+header @md_files Cache-Control "public, max-age=3600"
+header @md_files X-Content-Format "markdown"
+
+# Duplicate the matcher + rewrite for each collection:
+# @markdown_blog { path_regexp slug ^/blog/([^/]+)/?$ ; header Accept *text/markdown* }
+# rewrite @markdown_blog /blog/{re.slug.1}.md

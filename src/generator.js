@@ -1,5 +1,6 @@
 // src/generator.js
 import fs from 'fs';
+import fsp from 'fs/promises';
 import path from 'path';
 import matter from 'gray-matter';
 
@@ -44,36 +45,57 @@ function buildMarkdown(slug, data, body) {
   return out;
 }
 
+/**
+ * @typedef {{ src: string, output: string, rootDir?: string }} Collection
+ * @typedef {{ src: string, output: string, count: number, files: string[] }} CollectionResult
+ */
+
+/**
+ * Generate clean .md versions for a single content collection.
+ * Reads all .md and .mdx files from `src`, writes formatted markdown to `output`.
+ *
+ * @param {Collection} options
+ * @returns {Promise<CollectionResult>}
+ */
 export async function generateCollection({ src, output, rootDir = process.cwd() }) {
   const srcDir = path.resolve(rootDir, src);
   const outDir = path.resolve(rootDir, output);
 
-  if (!fs.existsSync(srcDir)) {
+  try {
+    await fsp.access(srcDir);
+  } catch {
     throw new Error(`Source directory not found: ${srcDir}`);
   }
 
-  fs.mkdirSync(outDir, { recursive: true });
+  await fsp.mkdir(outDir, { recursive: true });
 
-  const files = fs.readdirSync(srcDir).filter(f => f.endsWith('.md') || f.endsWith('.mdx'));
+  const entries = await fsp.readdir(srcDir);
+  const files = entries.filter(f => f.endsWith('.md') || f.endsWith('.mdx'));
   console.log(`📝 ${src} → ${output} (${files.length} files)`);
 
-  const generated = [];
-  for (const file of files) {
-    const slug = file.replace(/\.mdx?$/, '');
-    const raw = fs.readFileSync(path.join(srcDir, file), 'utf-8');
-    const { data, content } = matter(raw);
-    const body = file.endsWith('.mdx') ? stripMdx(content) : content;
-    const markdown = buildMarkdown(slug, data, body);
-    const outPath = path.join(outDir, `${slug}.md`);
-    fs.writeFileSync(outPath, markdown, 'utf-8');
-    console.log(`  ✓ ${slug}.md`);
-    generated.push(slug);
-  }
+  const generated = await Promise.all(
+    files.map(async (file) => {
+      const slug = file.replace(/\.mdx?$/, '');
+      const raw = await fsp.readFile(path.join(srcDir, file), 'utf-8');
+      const { data, content } = matter(raw);
+      const body = file.endsWith('.mdx') ? stripMdx(content) : content;
+      const markdown = buildMarkdown(slug, data, body);
+      await fsp.writeFile(path.join(outDir, `${slug}.md`), markdown, 'utf-8');
+      console.log(`  ✓ ${slug}.md`);
+      return slug;
+    })
+  );
 
   console.log(`✅ Generated ${generated.length} files → ${output}\n`);
   return { src, output, count: generated.length, files: generated };
 }
 
+/**
+ * Generate clean .md versions for one or more content collections.
+ *
+ * @param {{ collections: Collection[], rootDir?: string }} options
+ * @returns {Promise<CollectionResult[]>}
+ */
 export async function generateMarkdownVersions(options = {}) {
   const { collections = [], rootDir = process.cwd() } = options;
 

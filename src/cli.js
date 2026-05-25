@@ -14,21 +14,21 @@ const srcFlag = getFlag('--src');
 const outputFlag = getFlag('--output');
 
 async function run() {
-  let options;
-
-  const absConfig = path.resolve(process.cwd(), configPath);
-  if (fs.existsSync(absConfig)) {
-    const mod = await import(absConfig);
-    options = mod.default ?? mod;
-  } else if (srcFlag && outputFlag) {
-    options = { collections: [{ src: srcFlag, output: outputFlag }] };
-  } else {
-    console.error('Usage: static-md-export [--config md-export.config.js]');
-    console.error('       static-md-export --src src/content/blog --output dist/blog');
-    process.exit(1);
-  }
-
   try {
+    let options;
+
+    const absConfig = path.resolve(process.cwd(), configPath);
+    if (fs.existsSync(absConfig)) {
+      const mod = await import(absConfig);
+      options = mod.default ?? mod;
+    } else if (srcFlag && outputFlag) {
+      options = { collections: [{ src: srcFlag, output: outputFlag }] };
+    } else {
+      console.error('Usage: static-md-export [--config md-export.config.js]');
+      console.error('       static-md-export --src src/content/blog --output dist/blog');
+      process.exit(1);
+    }
+
     const results = await generateMarkdownVersions(options);
     const total = results.reduce((n, r) => n + r.count, 0);
     console.log(`\n✅ Done — ${total} markdown files generated across ${results.length} collection(s)`);

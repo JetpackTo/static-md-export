@@ -7,10 +7,11 @@ function stripMdx(content) {
   return content
     // Remove import/export statements
     .replace(/^(import|export)\s.+$/gm, '')
-    // Remove self-closing JSX tags
-    .replace(/<[A-Z][a-zA-Z0-9]*[^>]*\/>/g, '')
-    // Remove JSX block tags but keep inner text
-    .replace(/<[A-Z][a-zA-Z0-9]*[^>]*>([\s\S]*?)<\/[A-Z][a-zA-Z0-9]*>/g, '$1')
+    // Remove self-closing JSX tags (PascalCase, kebab-case, namespaced)
+    .replace(/<[A-Za-z][a-zA-Z0-9]*(?:\.[A-Za-z][a-zA-Z0-9]*)?(?:-[a-zA-Z0-9]+)*[^>]*\/>/g, '')
+    // Remove JSX block tags — non-greedy per line to avoid cross-tag bleed
+    // Use a simple open/close tag stripper that keeps inner content
+    .replace(/<([A-Za-z][a-zA-Z0-9]*(?:\.[A-Za-z][a-zA-Z0-9]*)?(?:-[a-zA-Z0-9]+)*)[^>]*>([\s\S]*?)<\/\1>/g, '$2')
     // Clean up extra blank lines left behind
     .replace(/\n{3,}/g, '\n\n')
     .trim();
@@ -24,10 +25,10 @@ function formatDate(value) {
 }
 
 function buildMarkdown(slug, data, body) {
-  const title = data.title || slug;
+  const title = data.title ?? slug;
   const date = formatDate(data.pubDate ?? data.date ?? data.publishedAt ?? null);
-  const author = data.author || null;
-  const description = data.description || null;
+  const author = data.author ?? null;
+  const description = data.description ?? null;
   const tags = data.tags ?? data.keywords ?? null;
 
   let out = `# ${title}\n\n`;
@@ -80,10 +81,5 @@ export async function generateMarkdownVersions(options = {}) {
     throw new Error('No collections configured. Provide at least one { src, output } entry.');
   }
 
-  const results = [];
-  for (const col of collections) {
-    const result = await generateCollection({ ...col, rootDir });
-    results.push(result);
-  }
-  return results;
+  return Promise.all(collections.map(col => generateCollection({ ...col, rootDir })));
 }
